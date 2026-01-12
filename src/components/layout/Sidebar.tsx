@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Plus, FileText } from 'lucide-react';
+import { Plus, FileText, X, Tag } from 'lucide-react';
 import { useNotesStore, useSettingsStore, useUIStore } from '../../stores';
 import { format } from 'date-fns';
 import { ContextMenu } from './ContextMenu';
@@ -15,20 +15,29 @@ interface ContextMenuState {
 export function Sidebar() {
   const { notes, activeNoteId, setActiveNote, createNote, deleteNote, updateNote } = useNotesStore();
   const { settings } = useSettingsStore();
-  const { currentView, searchQuery } = useUIStore();
+  const { currentView, searchQuery, filterTag, clearTagFilter } = useUIStore();
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [renamingNoteId, setRenamingNoteId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const renameInputRef = useRef<HTMLInputElement>(null);
 
   const filteredNotes = notes.filter(note => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      note.frontmatter.title.toLowerCase().includes(query) ||
-      note.content.toLowerCase().includes(query) ||
-      note.frontmatter.tags.some(tag => tag.toLowerCase().includes(query))
-    );
+    // Apply tag filter
+    if (filterTag && !note.frontmatter.tags.includes(filterTag)) {
+      return false;
+    }
+
+    // Apply search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      return (
+        note.frontmatter.title.toLowerCase().includes(query) ||
+        note.content.toLowerCase().includes(query) ||
+        note.frontmatter.tags.some(tag => tag.toLowerCase().includes(query))
+      );
+    }
+
+    return true;
   });
 
   useEffect(() => {
@@ -112,10 +121,24 @@ export function Sidebar() {
         </button>
       </div>
 
+      {filterTag && (
+        <div className="sidebar-filter-indicator">
+          <Tag size={12} />
+          <span className="sidebar-filter-tag">{filterTag}</span>
+          <button
+            className="sidebar-filter-clear"
+            onClick={clearTagFilter}
+            title="Clear tag filter"
+          >
+            <X size={12} />
+          </button>
+        </div>
+      )}
+
       <div className="sidebar-list">
         {filteredNotes.length === 0 ? (
           <div className="sidebar-empty">
-            {searchQuery ? 'No notes found' : 'No notes yet'}
+            {searchQuery || filterTag ? 'No notes found' : 'No notes yet'}
           </div>
         ) : (
           filteredNotes.map(note => (

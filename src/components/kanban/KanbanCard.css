@@ -49,19 +49,36 @@
   color: var(--text-muted);
 }
 
-.kanban-card-date,
-.kanban-card-tags {
+.kanban-card-date {
   display: flex;
   align-items: center;
   gap: var(--spacing-xs);
-}
-
-.kanban-card-date {
   color: var(--ctp-blue);
 }
 
-.kanban-card-tags {
+.kanban-card-tag-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-sm);
+}
+
+.kanban-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--spacing-sm);
+  background-color: var(--ctp-surface1);
+  border: 1px solid var(--ctp-surface2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
   color: var(--ctp-peach);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.kanban-tag-chip:hover {
+  background-color: var(--ctp-surface2);
+  border-color: var(--ctp-peach);
 }
 
 .kanban-card-tasks {

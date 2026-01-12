@@ -3,7 +3,7 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { watchImmediate } from '@tauri-apps/plugin-fs';
 import type { UnwatchFn } from '@tauri-apps/plugin-fs';
 import { Layout } from './components/layout';
-import { MarkdownEditor } from './components/editor';
+import { NoteEditor } from './components/editor';
 import { KanbanBoard } from './components/kanban';
 import { useNotesStore } from './stores/notesStore';
 import { useSettingsStore } from './stores/settingsStore';
@@ -109,7 +109,7 @@ function App() {
   return (
     <Layout>
       {currentView === 'notes' ? (
-        <MarkdownEditor />
+        <NoteEditor />
       ) : (
         <KanbanBoard />
       )}

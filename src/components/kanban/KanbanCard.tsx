@@ -1,9 +1,10 @@
 import { useMemo } from 'react';
 import { useDraggable } from '@dnd-kit/core';
-import { Calendar, Tag } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import type { Note } from '../../types/note';
-import { useNotesStore } from '../../stores';
+import { useNotesStore, useUIStore } from '../../stores';
+import { useTags } from '../../hooks';
 import './KanbanCard.css';
 
 interface Task {
@@ -20,6 +21,8 @@ interface KanbanCardProps {
 
 export function KanbanCard({ note, isDragging, onClick }: KanbanCardProps) {
   const { updateNote } = useNotesStore();
+  const { setFilterTag } = useUIStore();
+  const { tagsByFrequency } = useTags();
   const {
     attributes,
     listeners,
@@ -61,6 +64,27 @@ export function KanbanCard({ note, isDragging, onClick }: KanbanCardProps) {
       .replace(/[#*_\[\]]/g, '')
       .trim();
   }, [note.content, tasks.length]);
+
+  // Sort note's tags by global frequency (most common first), take top 3
+  const displayTags = useMemo(() => {
+    const noteTags = note.frontmatter.tags;
+    if (noteTags.length === 0) return [];
+
+    return [...noteTags]
+      .sort((a, b) => {
+        const aIndex = tagsByFrequency.indexOf(a);
+        const bIndex = tagsByFrequency.indexOf(b);
+        const aRank = aIndex === -1 ? Infinity : aIndex;
+        const bRank = bIndex === -1 ? Infinity : bIndex;
+        return aRank - bRank;
+      })
+      .slice(0, 3);
+  }, [note.frontmatter.tags, tagsByFrequency]);
+
+  const handleTagClick = (tag: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setFilterTag(tag);
+  };
 
   const handleCheckboxChange = async (task: Task, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -126,21 +150,29 @@ export function KanbanCard({ note, isDragging, onClick }: KanbanCardProps) {
         <p className="kanban-card-preview">{preview}...</p>
       ) : null}
 
-      <div className="kanban-card-footer">
-        {note.frontmatter.date && (
+      {displayTags.length > 0 && (
+        <div className="kanban-card-tag-chips">
+          {displayTags.map(tag => (
+            <button
+              key={tag}
+              className="kanban-tag-chip"
+              onClick={(e) => handleTagClick(tag, e)}
+              title={`Filter by: ${tag}`}
+            >
+              {tag}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {note.frontmatter.date && (
+        <div className="kanban-card-footer">
           <div className="kanban-card-date">
             <Calendar size={12} />
             <span>{format(new Date(note.frontmatter.date), 'MMM d')}</span>
           </div>
-        )}
-
-        {note.frontmatter.tags.length > 0 && (
-          <div className="kanban-card-tags">
-            <Tag size={12} />
-            <span>{note.frontmatter.tags.slice(0, 2).join(', ')}</span>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

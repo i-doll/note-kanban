@@ -8,6 +8,7 @@ import {
   pointerWithin,
 } from '@dnd-kit/core';
 import type { DragStartEvent, DragEndEvent } from '@dnd-kit/core';
+import { X, Tag } from 'lucide-react';
 import { KanbanColumn } from './KanbanColumn';
 import { KanbanCard } from './KanbanCard';
 import { useNotesStore, useSettingsStore, useUIStore } from '../../stores';
@@ -17,7 +18,7 @@ import './KanbanBoard.css';
 export function KanbanBoard() {
   const { notes, updateNote, setActiveNote } = useNotesStore();
   const { settings } = useSettingsStore();
-  const { setView } = useUIStore();
+  const { setView, filterTag, clearTagFilter, searchQuery } = useUIStore();
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(
@@ -28,16 +29,38 @@ export function KanbanBoard() {
     })
   );
 
-  // Group notes by column
+  // Filter notes by tag and search query
+  const filteredNotes = useMemo(() => {
+    let result = notes;
+
+    if (filterTag) {
+      result = result.filter(note =>
+        note.frontmatter.tags.includes(filterTag)
+      );
+    }
+
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(note =>
+        note.frontmatter.title.toLowerCase().includes(query) ||
+        note.content.toLowerCase().includes(query) ||
+        note.frontmatter.tags.some(tag => tag.toLowerCase().includes(query))
+      );
+    }
+
+    return result;
+  }, [notes, filterTag, searchQuery]);
+
+  // Group filtered notes by column
   const notesByColumn = useMemo(() => {
     const grouped: Record<string, Note[]> = {};
     settings.columns.forEach(col => {
-      grouped[col.id] = notes
+      grouped[col.id] = filteredNotes
         .filter(note => note.frontmatter.column === col.id)
         .sort((a, b) => a.frontmatter.order - b.frontmatter.order);
     });
     return grouped;
-  }, [notes, settings.columns]);
+  }, [filteredNotes, settings.columns]);
 
   const activeNote = useMemo(
     () => notes.find(n => n.frontmatter.id === activeId),
@@ -79,6 +102,21 @@ export function KanbanBoard() {
 
   return (
     <div className="kanban-board">
+      {filterTag && (
+        <div className="kanban-filter-indicator">
+          <Tag size={14} />
+          <span>Filtered by:</span>
+          <span className="kanban-filter-tag">{filterTag}</span>
+          <button
+            className="kanban-filter-clear"
+            onClick={clearTagFilter}
+            title="Clear filter"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       <DndContext
         sensors={sensors}
         collisionDetection={pointerWithin}
