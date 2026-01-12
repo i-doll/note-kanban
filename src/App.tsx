@@ -46,14 +46,10 @@ function App() {
 
     const startWatching = async () => {
       try {
-        console.log('Starting file watcher for:', settings.notesDirectory);
         unwatch = await watchImmediate(settings.notesDirectory, (event) => {
-          console.log('File change detected:', event.type, event.paths);
-
           // Only reload for relevant file events
           const isRelevant = event.paths.some(p => p.endsWith('.md'));
           if (!isRelevant) {
-            console.log('Ignoring non-md file change');
             return;
           }
 
@@ -62,11 +58,9 @@ function App() {
             clearTimeout(debounceTimerRef.current);
           }
           debounceTimerRef.current = window.setTimeout(() => {
-            console.log('Reloading notes...');
             loadNotes(settings.notesDirectory);
           }, 500);
         }, { recursive: true });
-        console.log('File watcher started successfully');
       } catch (error) {
         console.error('Failed to watch directory:', error);
       }

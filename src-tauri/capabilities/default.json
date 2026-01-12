@@ -16,7 +16,19 @@
       "allow": [{ "path": "**" }]
     },
     {
+      "identifier": "fs:allow-read-file",
+      "allow": [{ "path": "**" }]
+    },
+    {
+      "identifier": "fs:scope",
+      "allow": [{ "path": "**" }]
+    },
+    {
       "identifier": "fs:allow-write",
+      "allow": [{ "path": "**" }]
+    },
+    {
+      "identifier": "fs:allow-write-file",
       "allow": [{ "path": "**" }]
     },
     {
@@ -34,6 +46,8 @@
     {
       "identifier": "fs:allow-watch",
       "allow": [{ "path": "**" }]
-    }
+    },
+    "clipboard-manager:allow-read-image",
+    "clipboard-manager:allow-read-text"
   ]
 }

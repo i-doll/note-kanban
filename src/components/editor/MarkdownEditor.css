@@ -66,3 +66,35 @@
   font-size: var(--font-size-sm);
   color: var(--ctp-overlay0);
 }
+
+/* Inline image styles */
+.markdown-editor .cm-image-widget {
+  display: block;
+  margin: 12px 0;
+  line-height: 0;
+}
+
+.markdown-editor .cm-inline-image {
+  max-width: 100%;
+  max-height: 50vh;
+  object-fit: contain;
+  border-radius: 6px;
+  display: block;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: box-shadow 0.2s ease;
+}
+
+.markdown-editor .cm-inline-image:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.markdown-editor .cm-image-error {
+  color: var(--ctp-red, #f38ba8);
+  font-style: italic;
+  font-size: 0.9em;
+  line-height: normal;
+  padding: 8px 12px;
+  background-color: rgba(243, 139, 168, 0.1);
+  border-radius: 4px;
+  border: 1px solid rgba(243, 139, 168, 0.3);
+}

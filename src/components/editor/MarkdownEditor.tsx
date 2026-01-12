@@ -9,6 +9,7 @@ import { tags } from '@lezer/highlight';
 import { useNotesStore, useSettingsStore } from '../../stores';
 import { useDebounce } from '../../hooks/useDebounce';
 import { checkboxPlugin, checkboxTheme } from './checkboxPlugin';
+import { imagePlugin } from './imagePlugin';
 import './MarkdownEditor.css';
 
 // Catppuccin Mocha theme for CodeMirror
@@ -131,33 +132,42 @@ export function MarkdownEditor({ className }: MarkdownEditorProps) {
     debouncedSave(value);
   }, [debouncedSave]);
 
-  const extensions: Extension[] = useMemo(() => [
-    markdown({ base: markdownLanguage, codeLanguages: languages }),
-    catppuccinMochaTheme,
-    syntaxHighlighting(catppuccinHighlighting),
-    EditorView.lineWrapping,
-    checkboxPlugin,
-    checkboxTheme,
-    EditorView.theme({
-      '.cm-content': {
-        fontSize: `${settings.editorFontSize}px`,
-      },
-      // Selection styling - placed last to override other themes
-      '.cm-selectionBackground': {
-        backgroundColor: 'rgba(203, 166, 247, 0.4) !important',
-      },
-      '&.cm-focused .cm-selectionBackground': {
-        backgroundColor: 'rgba(203, 166, 247, 0.4) !important',
-      },
-      '.cm-selectionLayer .cm-selectionBackground': {
-        backgroundColor: 'rgba(203, 166, 247, 0.4) !important',
-      },
-      // Ensure selection is visible on active line
-      '.cm-activeLine .cm-selectionBackground': {
-        backgroundColor: 'rgba(203, 166, 247, 0.5) !important',
-      },
-    }),
-  ], [settings.editorFontSize]);
+  const extensions: Extension[] = useMemo(() => {
+    const exts: Extension[] = [
+      markdown({ base: markdownLanguage, codeLanguages: languages }),
+      catppuccinMochaTheme,
+      syntaxHighlighting(catppuccinHighlighting),
+      EditorView.lineWrapping,
+      checkboxPlugin,
+      checkboxTheme,
+      EditorView.theme({
+        '.cm-content': {
+          fontSize: `${settings.editorFontSize}px`,
+        },
+        // Selection styling - placed last to override other themes
+        '.cm-selectionBackground': {
+          backgroundColor: 'rgba(203, 166, 247, 0.4) !important',
+        },
+        '&.cm-focused .cm-selectionBackground': {
+          backgroundColor: 'rgba(203, 166, 247, 0.4) !important',
+        },
+        '.cm-selectionLayer .cm-selectionBackground': {
+          backgroundColor: 'rgba(203, 166, 247, 0.4) !important',
+        },
+        // Ensure selection is visible on active line
+        '.cm-activeLine .cm-selectionBackground': {
+          backgroundColor: 'rgba(203, 166, 247, 0.5) !important',
+        },
+      }),
+    ];
+
+    // Add image plugin when a note is active
+    if (activeNote?.file_path) {
+      exts.push(imagePlugin(activeNote.file_path));
+    }
+
+    return exts;
+  }, [settings.editorFontSize, activeNote?.file_path]);
 
   if (!activeNote) {
     return (
