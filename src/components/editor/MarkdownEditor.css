@@ -24,9 +24,28 @@
   background-color: #1e1e2e;
 }
 
+/* Ensure content and lines are transparent so selection shows through */
+.markdown-editor .cm-content {
+  background: transparent !important;
+}
+
+.markdown-editor .cm-line:not(.cm-activeLine) {
+  background: transparent !important;
+}
+
+.markdown-editor .cm-activeLine {
+  background-color: rgba(49, 50, 68, 0.7) !important;
+}
+
 .markdown-editor .cm-focused .cm-selectionBackground,
-.markdown-editor .cm-selectionBackground {
-  background-color: #585b70 !important;
+.markdown-editor .cm-selectionBackground,
+.markdown-editor .cm-selectionLayer .cm-selectionBackground {
+  background-color: rgba(203, 166, 247, 0.4) !important;
+}
+
+/* Ensure selection is visible even on active line */
+.markdown-editor .cm-activeLine .cm-selectionBackground {
+  background-color: rgba(203, 166, 247, 0.5) !important;
 }
 
 .markdown-editor-empty {

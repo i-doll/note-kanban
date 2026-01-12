@@ -162,7 +162,7 @@ input:focus, textarea:focus {
 }
 
 ::selection {
-  background-color: var(--ctp-surface2);
+  background-color: rgba(203, 166, 247, 0.4);
 }
 
 /* App setup screen */

@@ -28,16 +28,15 @@ const catppuccinMochaTheme = EditorView.theme({
     caretColor: '#cba6f7',
     fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
     padding: '16px',
-    backgroundColor: '#1e1e2e',
   },
   '.cm-cursor': {
     borderLeftColor: '#cba6f7',
   },
   '.cm-selectionBackground, &.cm-focused .cm-selectionBackground': {
-    backgroundColor: '#585b70 !important',
+    backgroundColor: 'rgba(203, 166, 247, 0.35) !important',
   },
   '.cm-activeLine': {
-    backgroundColor: '#313244',
+    backgroundColor: 'rgba(49, 50, 68, 0.7)',
   },
   '.cm-gutters': {
     backgroundColor: '#181825',
@@ -52,6 +51,7 @@ const catppuccinMochaTheme = EditorView.theme({
   },
   '.cm-line': {
     padding: '0 8px',
+    background: 'transparent',
   },
 }, { dark: true });
 
@@ -141,6 +141,20 @@ export function MarkdownEditor({ className }: MarkdownEditorProps) {
     EditorView.theme({
       '.cm-content': {
         fontSize: `${settings.editorFontSize}px`,
+      },
+      // Selection styling - placed last to override other themes
+      '.cm-selectionBackground': {
+        backgroundColor: 'rgba(203, 166, 247, 0.4) !important',
+      },
+      '&.cm-focused .cm-selectionBackground': {
+        backgroundColor: 'rgba(203, 166, 247, 0.4) !important',
+      },
+      '.cm-selectionLayer .cm-selectionBackground': {
+        backgroundColor: 'rgba(203, 166, 247, 0.4) !important',
+      },
+      // Ensure selection is visible on active line
+      '.cm-activeLine .cm-selectionBackground': {
+        backgroundColor: 'rgba(203, 166, 247, 0.5) !important',
       },
     }),
   ], [settings.editorFontSize]);

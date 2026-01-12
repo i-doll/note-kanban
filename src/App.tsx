@@ -1,6 +1,7 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { watchImmediate } from '@tauri-apps/plugin-fs';
+import { exit } from '@tauri-apps/plugin-process';
 import type { UnwatchFn } from '@tauri-apps/plugin-fs';
 import { Layout } from './components/layout';
 import { NoteEditor } from './components/editor';
@@ -23,6 +24,19 @@ function App() {
       loadNotes(settings.notesDirectory);
     }
   }, [settings.notesDirectory, loadNotes]);
+
+  // Handle quit shortcut (Ctrl+Q / Cmd+Q)
+  const handleQuitShortcut = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'q' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      exit(0);
+    }
+  }, []);
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleQuitShortcut);
+    return () => document.removeEventListener('keydown', handleQuitShortcut);
+  }, [handleQuitShortcut]);
 
   // Watch for external file changes
   useEffect(() => {
