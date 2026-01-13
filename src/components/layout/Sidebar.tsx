@@ -1,57 +1,23 @@
-import { useState, useRef, useEffect } from 'react';
-import { Plus, FileText, X, Tag } from 'lucide-react';
-import { useNotesStore, useSettingsStore, useUIStore } from '../../stores';
-import { format } from 'date-fns';
-import { ContextMenu } from './ContextMenu';
-import type { Note } from '../../types/note';
+import { useState } from 'react';
+import { Plus, FolderPlus, X, Tag } from 'lucide-react';
+import { useNotesStore, useSettingsStore, useUIStore, useFolderStore } from '../../stores';
+import { FolderTree } from './FolderTree';
 import './Sidebar.css';
 
-interface ContextMenuState {
-  note: Note;
-  x: number;
-  y: number;
-}
-
 export function Sidebar() {
-  const { notes, activeNoteId, setActiveNote, createNote, deleteNote, updateNote } = useNotesStore();
+  const { createNote, setActiveNote } = useNotesStore();
   const { settings } = useSettingsStore();
-  const { currentView, searchQuery, filterTag, clearTagFilter } = useUIStore();
-  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
-  const [renamingNoteId, setRenamingNoteId] = useState<string | null>(null);
-  const [renameValue, setRenameValue] = useState('');
-  const renameInputRef = useRef<HTMLInputElement>(null);
-
-  const filteredNotes = notes.filter(note => {
-    // Apply tag filter
-    if (filterTag && !note.frontmatter.tags.includes(filterTag)) {
-      return false;
-    }
-
-    // Apply search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      return (
-        note.frontmatter.title.toLowerCase().includes(query) ||
-        note.content.toLowerCase().includes(query) ||
-        note.frontmatter.tags.some(tag => tag.toLowerCase().includes(query))
-      );
-    }
-
-    return true;
-  });
-
-  useEffect(() => {
-    if (renamingNoteId && renameInputRef.current) {
-      renameInputRef.current.focus();
-      renameInputRef.current.select();
-    }
-  }, [renamingNoteId]);
+  const { currentView, filterTag, clearTagFilter } = useUIStore();
+  const { selectedFolder, createFolder } = useFolderStore();
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
 
   const handleNewNote = async () => {
     if (!settings.notesDirectory) return;
     try {
       const note = await createNote({
         notes_dir: settings.notesDirectory,
+        folder_path: selectedFolder || undefined,
         title: 'Untitled',
         content: '',
         column: 'todo',
@@ -62,49 +28,18 @@ export function Sidebar() {
     }
   };
 
-  const handleContextMenu = (e: React.MouseEvent, note: Note) => {
-    e.preventDefault();
-    setContextMenu({ note, x: e.clientX, y: e.clientY });
-  };
-
-  const handleDelete = async () => {
-    if (!contextMenu) return;
+  const handleNewFolder = async () => {
+    if (!settings.notesDirectory || !newFolderName.trim()) return;
     try {
-      await deleteNote(contextMenu.note.file_path);
+      await createFolder(
+        settings.notesDirectory,
+        newFolderName.trim(),
+        selectedFolder || undefined
+      );
+      setNewFolderName('');
+      setIsCreatingFolder(false);
     } catch (error) {
-      console.error('Failed to delete note:', error);
-    }
-    setContextMenu(null);
-  };
-
-  const handleStartRename = () => {
-    if (!contextMenu) return;
-    setRenamingNoteId(contextMenu.note.frontmatter.id);
-    setRenameValue(contextMenu.note.frontmatter.title);
-    setContextMenu(null);
-  };
-
-  const handleRenameSubmit = async (note: Note) => {
-    if (renameValue.trim() && renameValue !== note.frontmatter.title) {
-      try {
-        await updateNote({
-          file_path: note.file_path,
-          title: renameValue.trim(),
-        });
-      } catch (error) {
-        console.error('Failed to rename note:', error);
-      }
-    }
-    setRenamingNoteId(null);
-    setRenameValue('');
-  };
-
-  const handleRenameKeyDown = (e: React.KeyboardEvent, note: Note) => {
-    if (e.key === 'Enter') {
-      handleRenameSubmit(note);
-    } else if (e.key === 'Escape') {
-      setRenamingNoteId(null);
-      setRenameValue('');
+      console.error('Failed to create folder:', error);
     }
   };
 
@@ -119,7 +54,38 @@ export function Sidebar() {
           <Plus size={16} />
           <span>New Note</span>
         </button>
+        <button
+          className="sidebar-folder-btn"
+          onClick={() => setIsCreatingFolder(true)}
+          title="New Folder"
+        >
+          <FolderPlus size={16} />
+        </button>
       </div>
+
+      {isCreatingFolder && (
+        <div className="sidebar-new-folder">
+          <input
+            type="text"
+            placeholder="Folder name..."
+            value={newFolderName}
+            onChange={(e) => setNewFolderName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleNewFolder();
+              if (e.key === 'Escape') {
+                setIsCreatingFolder(false);
+                setNewFolderName('');
+              }
+            }}
+            onBlur={() => {
+              if (!newFolderName.trim()) {
+                setIsCreatingFolder(false);
+              }
+            }}
+            autoFocus
+          />
+        </div>
+      )}
 
       {filterTag && (
         <div className="sidebar-filter-indicator">
@@ -135,53 +101,7 @@ export function Sidebar() {
         </div>
       )}
 
-      <div className="sidebar-list">
-        {filteredNotes.length === 0 ? (
-          <div className="sidebar-empty">
-            {searchQuery || filterTag ? 'No notes found' : 'No notes yet'}
-          </div>
-        ) : (
-          filteredNotes.map(note => (
-            <button
-              key={note.frontmatter.id}
-              className={`sidebar-item ${activeNoteId === note.frontmatter.id ? 'active' : ''}`}
-              onClick={() => setActiveNote(note.frontmatter.id)}
-              onContextMenu={(e) => handleContextMenu(e, note)}
-            >
-              <FileText size={16} className="sidebar-item-icon" />
-              <div className="sidebar-item-content">
-                {renamingNoteId === note.frontmatter.id ? (
-                  <input
-                    ref={renameInputRef}
-                    type="text"
-                    className="sidebar-item-rename-input"
-                    value={renameValue}
-                    onChange={(e) => setRenameValue(e.target.value)}
-                    onBlur={() => handleRenameSubmit(note)}
-                    onKeyDown={(e) => handleRenameKeyDown(e, note)}
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                ) : (
-                  <span className="sidebar-item-title">{note.frontmatter.title}</span>
-                )}
-                <span className="sidebar-item-date">
-                  {format(new Date(note.frontmatter.modified), 'MMM d, yyyy')}
-                </span>
-              </div>
-            </button>
-          ))
-        )}
-      </div>
-
-      {contextMenu && (
-        <ContextMenu
-          x={contextMenu.x}
-          y={contextMenu.y}
-          onClose={() => setContextMenu(null)}
-          onDelete={handleDelete}
-          onRename={handleStartRename}
-        />
-      )}
+      <FolderTree />
     </aside>
   );
 }

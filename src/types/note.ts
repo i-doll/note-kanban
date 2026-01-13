@@ -17,6 +17,7 @@ export type Note = {
 
 export type CreateNoteInput = {
   notes_dir: string;
+  folder_path?: string;
   title: string;
   content?: string;
   date?: string;

@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 use uuid::Uuid;
+use walkdir::WalkDir;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NoteFrontmatter {
@@ -26,9 +27,23 @@ pub struct Note {
     pub file_path: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Folder {
+    pub path: String,
+    pub name: String,
+    pub relative_path: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NotesWithFolders {
+    pub notes: Vec<Note>,
+    pub folders: Vec<Folder>,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct CreateNoteInput {
     pub notes_dir: String,
+    pub folder_path: Option<String>,
     pub title: String,
     pub content: Option<String>,
     pub date: Option<String>,
@@ -91,36 +106,61 @@ fn slugify(title: &str) -> String {
 }
 
 #[tauri::command]
-pub fn list_notes(notes_dir: String) -> Result<Vec<Note>, String> {
-    let path = PathBuf::from(&notes_dir);
+pub fn list_notes(notes_dir: String) -> Result<NotesWithFolders, String> {
+    let base_path = PathBuf::from(&notes_dir);
 
-    if !path.exists() {
-        fs::create_dir_all(&path)
+    if !base_path.exists() {
+        fs::create_dir_all(&base_path)
             .map_err(|e| format!("Failed to create notes directory: {}", e))?;
-        return Ok(vec![]);
+        return Ok(NotesWithFolders {
+            notes: vec![],
+            folders: vec![],
+        });
     }
 
-    let entries = fs::read_dir(&path)
-        .map_err(|e| format!("Failed to read directory: {}", e))?;
-
     let mut notes = Vec::new();
+    let mut folders = Vec::new();
 
-    for entry in entries {
-        let entry = entry.map_err(|e| format!("Failed to read entry: {}", e))?;
-        let file_path = entry.path();
+    for entry in WalkDir::new(&base_path)
+        .min_depth(1)
+        .into_iter()
+        .filter_entry(|e| {
+            // Skip .attachments directories
+            !e.file_name()
+                .to_str()
+                .map(|s| s.ends_with(".attachments"))
+                .unwrap_or(false)
+        })
+        .filter_map(|e| e.ok())
+    {
+        let path = entry.path();
+        let relative = path
+            .strip_prefix(&base_path)
+            .map_err(|e| format!("Failed to get relative path: {}", e))?;
 
-        if file_path.extension().map_or(false, |ext| ext == "md") {
-            match parse_note(&file_path) {
+        if path.is_dir() {
+            folders.push(Folder {
+                path: path.to_string_lossy().to_string(),
+                name: path
+                    .file_name()
+                    .map(|n| n.to_string_lossy().to_string())
+                    .unwrap_or_default(),
+                relative_path: relative.to_string_lossy().to_string(),
+            });
+        } else if path.extension().map_or(false, |ext| ext == "md") {
+            match parse_note(&path.to_path_buf()) {
                 Ok(note) => notes.push(note),
-                Err(e) => log::warn!("Skipping invalid note {:?}: {}", file_path, e),
+                Err(e) => log::warn!("Skipping invalid note {:?}: {}", path, e),
             }
         }
     }
 
     // Sort by modified date (newest first)
     notes.sort_by(|a, b| b.frontmatter.modified.cmp(&a.frontmatter.modified));
+    // Sort folders alphabetically by relative path
+    folders.sort_by(|a, b| a.relative_path.cmp(&b.relative_path));
 
-    Ok(notes)
+    Ok(NotesWithFolders { notes, folders })
 }
 
 #[tauri::command]
@@ -148,20 +188,26 @@ pub fn create_note(input: CreateNoteInput) -> Result<Note, String> {
     let content = input.content.unwrap_or_default();
     let file_content = serialize_note(&frontmatter, &content);
 
+    // Determine target directory (root or subfolder)
+    let target_dir = match &input.folder_path {
+        Some(folder) => PathBuf::from(&input.notes_dir).join(folder),
+        None => PathBuf::from(&input.notes_dir),
+    };
+
+    // Ensure directory exists
+    fs::create_dir_all(&target_dir)
+        .map_err(|e| format!("Failed to create notes directory: {}", e))?;
+
     // Generate filename from title, handling duplicates
     let base_slug = slugify(&input.title);
     let mut filename = format!("{}.md", base_slug);
-    let mut file_path = PathBuf::from(&input.notes_dir).join(&filename);
-
-    // Ensure directory exists
-    fs::create_dir_all(&input.notes_dir)
-        .map_err(|e| format!("Failed to create notes directory: {}", e))?;
+    let mut file_path = target_dir.join(&filename);
 
     // If file exists, add a number suffix
     let mut counter = 1;
     while file_path.exists() {
         filename = format!("{}-{}.md", base_slug, counter);
-        file_path = PathBuf::from(&input.notes_dir).join(&filename);
+        file_path = target_dir.join(&filename);
         counter += 1;
     }
 
@@ -212,14 +258,23 @@ pub fn update_note(input: UpdateNoteInput) -> Result<Note, String> {
     // Rename file if title changed
     if title_changed {
         if let Some(parent) = path.parent() {
+            // Get old attachments folder path
+            let old_stem = path
+                .file_stem()
+                .map(|s| s.to_string_lossy().to_string())
+                .unwrap_or_default();
+            let old_attachments = parent.join(format!("{}.attachments", old_stem));
+
             let base_slug = slugify(&note.frontmatter.title);
             let mut new_filename = format!("{}.md", base_slug);
             let mut new_path = parent.join(&new_filename);
+            let mut new_stem = base_slug.clone();
 
             // Handle duplicates (but skip if it's the same file)
             let mut counter = 1;
             while new_path.exists() && new_path != path {
-                new_filename = format!("{}-{}.md", base_slug, counter);
+                new_stem = format!("{}-{}", base_slug, counter);
+                new_filename = format!("{}.md", new_stem);
                 new_path = parent.join(&new_filename);
                 counter += 1;
             }
@@ -229,6 +284,13 @@ pub fn update_note(input: UpdateNoteInput) -> Result<Note, String> {
                 fs::rename(&path, &new_path)
                     .map_err(|e| format!("Failed to rename note: {}", e))?;
                 current_path = new_path;
+
+                // Rename attachments folder if it exists
+                if old_attachments.exists() && old_attachments.is_dir() {
+                    let new_attachments = parent.join(format!("{}.attachments", new_stem));
+                    fs::rename(&old_attachments, &new_attachments)
+                        .map_err(|e| format!("Failed to rename attachments folder: {}", e))?;
+                }
             }
         }
     }
@@ -251,8 +313,145 @@ pub fn delete_note(file_path: String) -> Result<(), String> {
         return Err("Note file does not exist".to_string());
     }
 
+    // Get the attachments folder path
+    let stem = path
+        .file_stem()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_default();
+    let attachments = path
+        .parent()
+        .map(|p| p.join(format!("{}.attachments", stem)));
+
+    // Delete the note file
     fs::remove_file(&path)
         .map_err(|e| format!("Failed to delete note: {}", e))?;
 
+    // Delete the attachments folder if it exists
+    if let Some(attach_path) = attachments {
+        if attach_path.exists() && attach_path.is_dir() {
+            fs::remove_dir_all(&attach_path)
+                .map_err(|e| format!("Failed to delete attachments folder: {}", e))?;
+        }
+    }
+
     Ok(())
+}
+
+#[tauri::command]
+pub fn create_folder(
+    notes_dir: String,
+    folder_name: String,
+    parent_path: Option<String>,
+) -> Result<Folder, String> {
+    let base = PathBuf::from(&notes_dir);
+    let target = match parent_path {
+        Some(parent) => base.join(parent).join(&folder_name),
+        None => base.join(&folder_name),
+    };
+
+    if target.exists() {
+        return Err("Folder already exists".to_string());
+    }
+
+    fs::create_dir_all(&target).map_err(|e| format!("Failed to create folder: {}", e))?;
+
+    let relative = target
+        .strip_prefix(&base)
+        .map_err(|e| format!("Failed to get relative path: {}", e))?;
+
+    Ok(Folder {
+        path: target.to_string_lossy().to_string(),
+        name: folder_name,
+        relative_path: relative.to_string_lossy().to_string(),
+    })
+}
+
+#[tauri::command]
+pub fn rename_folder(old_path: String, new_name: String) -> Result<Folder, String> {
+    let old = PathBuf::from(&old_path);
+    if !old.exists() || !old.is_dir() {
+        return Err("Folder does not exist".to_string());
+    }
+
+    let new = old
+        .parent()
+        .ok_or("Cannot rename root folder")?
+        .join(&new_name);
+
+    if new.exists() {
+        return Err("A folder with that name already exists".to_string());
+    }
+
+    fs::rename(&old, &new).map_err(|e| format!("Failed to rename folder: {}", e))?;
+
+    Ok(Folder {
+        path: new.to_string_lossy().to_string(),
+        name: new_name,
+        relative_path: new
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_default(),
+    })
+}
+
+#[tauri::command]
+pub fn delete_folder(folder_path: String) -> Result<(), String> {
+    let path = PathBuf::from(&folder_path);
+    if !path.exists() {
+        return Err("Folder does not exist".to_string());
+    }
+
+    fs::remove_dir_all(&path).map_err(|e| format!("Failed to delete folder: {}", e))?;
+
+    Ok(())
+}
+
+#[tauri::command]
+pub fn move_note(file_path: String, target_folder: String) -> Result<Note, String> {
+    let source = PathBuf::from(&file_path);
+    if !source.exists() {
+        return Err("Note does not exist".to_string());
+    }
+
+    let target_dir = PathBuf::from(&target_folder);
+    if !target_dir.exists() {
+        fs::create_dir_all(&target_dir)
+            .map_err(|e| format!("Failed to create target folder: {}", e))?;
+    }
+
+    let file_name = source.file_name().ok_or("Invalid file name")?;
+    let destination = target_dir.join(file_name);
+
+    // Get the source attachments folder (note-name.attachments)
+    let source_stem = source
+        .file_stem()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_default();
+    let source_attachments = source
+        .parent()
+        .map(|p| p.join(format!("{}.attachments", source_stem)));
+
+    // Handle name collision
+    let mut final_dest = destination.clone();
+    let mut final_stem = source_stem.clone();
+    let mut counter = 1;
+    while final_dest.exists() {
+        final_stem = format!("{}-{}", source_stem, counter);
+        final_dest = target_dir.join(format!("{}.md", final_stem));
+        counter += 1;
+    }
+
+    // Move the note file
+    fs::rename(&source, &final_dest).map_err(|e| format!("Failed to move note: {}", e))?;
+
+    // Move the attachments folder if it exists
+    if let Some(src_attach) = source_attachments {
+        if src_attach.exists() && src_attach.is_dir() {
+            let dest_attachments = target_dir.join(format!("{}.attachments", final_stem));
+            fs::rename(&src_attach, &dest_attachments)
+                .map_err(|e| format!("Failed to move attachments folder: {}", e))?;
+        }
+    }
+
+    parse_note(&final_dest)
 }

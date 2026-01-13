@@ -1,0 +1,85 @@
+.folder-tree {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-sm);
+}
+
+.folder-node {
+  user-select: none;
+}
+
+.folder-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: background-color var(--transition-fast);
+}
+
+.folder-row:hover {
+  background-color: var(--bg-tertiary);
+}
+
+.folder-row.selected {
+  background-color: var(--ctp-surface0);
+  color: var(--text-primary);
+}
+
+.folder-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.folder-toggle:hover {
+  color: var(--text-secondary);
+}
+
+.folder-name {
+  flex: 1;
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.folder-children {
+  /* Children are indented via padding-left on each row */
+}
+
+.folder-note {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: background-color var(--transition-fast);
+}
+
+.folder-note:hover {
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.folder-note.active {
+  background-color: var(--ctp-surface0);
+  color: var(--accent);
+}
+
+.folder-note-title {
+  flex: 1;
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
