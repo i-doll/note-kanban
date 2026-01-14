@@ -65,12 +65,17 @@ cd "$PROJECT_ROOT"
 npm install --package-lock-only --silent 2>/dev/null
 echo -e "${GREEN}done${NC}"
 
+# Update aur/PKGBUILD
+echo -n "Updating aur/PKGBUILD... "
+sed -i '' "s/^pkgver=.*/pkgver=$VERSION/" "$PROJECT_ROOT/aur/PKGBUILD"
+echo -e "${GREEN}done${NC}"
+
 echo ""
 
 # Git operations
 echo -e "${YELLOW}Creating git commit and tag...${NC}"
 
-git add package.json package-lock.json src-tauri/Cargo.toml src-tauri/Cargo.lock src-tauri/tauri.conf.json
+git add package.json package-lock.json src-tauri/Cargo.toml src-tauri/Cargo.lock src-tauri/tauri.conf.json aur/PKGBUILD
 git commit -m "Bump version to $VERSION"
 git tag -a "v$VERSION" -m "Version $VERSION"
 

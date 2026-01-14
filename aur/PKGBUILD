@@ -1,0 +1,37 @@
+# Maintainer: Your Name <your.email@example.com>
+pkgname=notes-kanban-bin
+pkgver=2.1.0
+pkgrel=1
+pkgdesc="A notes-first app with kanban organization"
+arch=('x86_64')
+url="https://github.com/i-doll/note-kanban"
+license=('MIT')
+depends=('webkit2gtk-4.1' 'gtk3' 'libayatana-appindicator')
+provides=('notes-kanban')
+conflicts=('notes-kanban')
+options=('!strip')
+source=("${pkgname}-${pkgver}.AppImage::${url}/releases/download/v${pkgver}/Notes.Kanban_${pkgver}_amd64.AppImage")
+sha256sums=('SKIP')
+
+prepare() {
+    chmod +x "${pkgname}-${pkgver}.AppImage"
+    "./${pkgname}-${pkgver}.AppImage" --appimage-extract
+}
+
+package() {
+    # Install the main binary
+    install -Dm755 "${srcdir}/squashfs-root/usr/bin/notes-kanban" \
+        "${pkgdir}/usr/bin/notes-kanban"
+
+    # Install desktop file (has space in filename)
+    install -Dm644 "${srcdir}/squashfs-root/usr/share/applications/Notes Kanban.desktop" \
+        "${pkgdir}/usr/share/applications/notes-kanban.desktop"
+
+    # Install icons
+    install -Dm644 "${srcdir}/squashfs-root/usr/share/icons/hicolor/32x32/apps/notes-kanban.png" \
+        "${pkgdir}/usr/share/icons/hicolor/32x32/apps/notes-kanban.png"
+    install -Dm644 "${srcdir}/squashfs-root/usr/share/icons/hicolor/128x128/apps/notes-kanban.png" \
+        "${pkgdir}/usr/share/icons/hicolor/128x128/apps/notes-kanban.png"
+    install -Dm644 "${srcdir}/squashfs-root/usr/share/icons/hicolor/256x256@2/apps/notes-kanban.png" \
+        "${pkgdir}/usr/share/icons/hicolor/256x256/apps/notes-kanban.png"
+}
