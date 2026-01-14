@@ -39,12 +39,12 @@ echo ""
 
 # Update package.json
 echo -n "Updating package.json... "
-sed -i '' "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$VERSION\"/" "$PROJECT_ROOT/package.json"
+sed -i "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$VERSION\"/" "$PROJECT_ROOT/package.json"
 echo -e "${GREEN}done${NC}"
 
 # Update src-tauri/Cargo.toml
 echo -n "Updating src-tauri/Cargo.toml... "
-sed -i '' "s/^version = \"$CURRENT_VERSION\"/version = \"$VERSION\"/" "$PROJECT_ROOT/src-tauri/Cargo.toml"
+sed -i "s/^version = \"$CURRENT_VERSION\"/version = \"$VERSION\"/" "$PROJECT_ROOT/src-tauri/Cargo.toml"
 echo -e "${GREEN}done${NC}"
 
 # Update src-tauri/Cargo.lock
@@ -56,7 +56,7 @@ echo -e "${GREEN}done${NC}"
 
 # Update src-tauri/tauri.conf.json
 echo -n "Updating src-tauri/tauri.conf.json... "
-sed -i '' "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$VERSION\"/" "$PROJECT_ROOT/src-tauri/tauri.conf.json"
+sed -i "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$VERSION\"/" "$PROJECT_ROOT/src-tauri/tauri.conf.json"
 echo -e "${GREEN}done${NC}"
 
 # Sync package-lock.json
@@ -67,7 +67,7 @@ echo -e "${GREEN}done${NC}"
 
 # Update aur/PKGBUILD
 echo -n "Updating aur/PKGBUILD... "
-sed -i '' "s/^pkgver=.*/pkgver=$VERSION/" "$PROJECT_ROOT/aur/PKGBUILD"
+sed -i "s/^pkgver=.*/pkgver=$VERSION/" "$PROJECT_ROOT/aur/PKGBUILD"
 echo -e "${GREEN}done${NC}"
 
 echo ""
