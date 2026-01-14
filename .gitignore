@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+
+# AUR
+aur/*.AppImage
+aur/*.zst
+aur/src/
+aur/pkg/
+aur/.SRCINFO
