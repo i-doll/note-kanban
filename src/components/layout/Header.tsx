@@ -10,6 +10,8 @@ export function Header() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [showTagDropdown, setShowTagDropdown] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  const modifierKey = isMac ? '⌘' : 'Ctrl';
 
   // Global keyboard shortcut for Ctrl/Cmd+K
   const handleGlobalKeyDown = useCallback((e: KeyboardEvent) => {
@@ -97,7 +99,7 @@ export function Header() {
           <input
             ref={inputRef}
             type="text"
-            placeholder={filterTag ? "Search within filter..." : "Search notes... (Ctrl+K)"}
+            placeholder={filterTag ? "Search within filter..." : "Search notes..."}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -114,7 +116,7 @@ export function Header() {
             </button>
           )}
           {!searchQuery && !filterTag && (
-            <kbd className="header-search-shortcut">Ctrl K</kbd>
+            <kbd className="header-search-shortcut">{modifierKey} K</kbd>
           )}
 
           {showTagDropdown && (
