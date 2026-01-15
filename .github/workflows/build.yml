@@ -85,10 +85,17 @@ jobs:
         run: |
           cd src-tauri/target/${{ matrix.target }}/release/bundle/macos
           for f in *.app.tar.gz; do
-            [ -f "$f" ] && mv "$f" "${f%.app.tar.gz}_x64.app.tar.gz"
+            if [ -f "$f" ]; then
+              # Replace spaces with periods and add arch suffix
+              newname=$(echo "${f%.app.tar.gz}" | tr ' ' '.')_x64.app.tar.gz
+              mv "$f" "$newname"
+            fi
           done
           for f in *.app.tar.gz.sig; do
-            [ -f "$f" ] && mv "$f" "${f%.app.tar.gz.sig}_x64.app.tar.gz.sig"
+            if [ -f "$f" ]; then
+              newname=$(echo "${f%.app.tar.gz.sig}" | tr ' ' '.')_x64.app.tar.gz.sig
+              mv "$f" "$newname"
+            fi
           done
 
       - name: Upload artifacts (macOS x64)
@@ -106,10 +113,17 @@ jobs:
         run: |
           cd src-tauri/target/${{ matrix.target }}/release/bundle/macos
           for f in *.app.tar.gz; do
-            [ -f "$f" ] && mv "$f" "${f%.app.tar.gz}_aarch64.app.tar.gz"
+            if [ -f "$f" ]; then
+              # Replace spaces with periods and add arch suffix
+              newname=$(echo "${f%.app.tar.gz}" | tr ' ' '.')_aarch64.app.tar.gz
+              mv "$f" "$newname"
+            fi
           done
           for f in *.app.tar.gz.sig; do
-            [ -f "$f" ] && mv "$f" "${f%.app.tar.gz.sig}_aarch64.app.tar.gz.sig"
+            if [ -f "$f" ]; then
+              newname=$(echo "${f%.app.tar.gz.sig}" | tr ' ' '.')_aarch64.app.tar.gz.sig
+              mv "$f" "$newname"
+            fi
           done
 
       - name: Upload artifacts (macOS ARM)
