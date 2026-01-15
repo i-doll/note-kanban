@@ -14,6 +14,15 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# Cross-platform sed in-place edit (macOS uses BSD sed, Linux uses GNU sed)
+sed_inplace() {
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        sed -i '' "$@"
+    else
+        sed -i "$@"
+    fi
+}
+
 # Check for version argument
 if [ -z "$1" ]; then
     echo -e "${RED}Error: Version number required${NC}"
@@ -39,12 +48,12 @@ echo ""
 
 # Update package.json
 echo -n "Updating package.json... "
-sed -i "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$VERSION\"/" "$PROJECT_ROOT/package.json"
+sed_inplace "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$VERSION\"/" "$PROJECT_ROOT/package.json"
 echo -e "${GREEN}done${NC}"
 
 # Update src-tauri/Cargo.toml
 echo -n "Updating src-tauri/Cargo.toml... "
-sed -i "s/^version = \"$CURRENT_VERSION\"/version = \"$VERSION\"/" "$PROJECT_ROOT/src-tauri/Cargo.toml"
+sed_inplace "s/^version = \"$CURRENT_VERSION\"/version = \"$VERSION\"/" "$PROJECT_ROOT/src-tauri/Cargo.toml"
 echo -e "${GREEN}done${NC}"
 
 # Update src-tauri/Cargo.lock
@@ -56,7 +65,7 @@ echo -e "${GREEN}done${NC}"
 
 # Update src-tauri/tauri.conf.json
 echo -n "Updating src-tauri/tauri.conf.json... "
-sed -i "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$VERSION\"/" "$PROJECT_ROOT/src-tauri/tauri.conf.json"
+sed_inplace "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$VERSION\"/" "$PROJECT_ROOT/src-tauri/tauri.conf.json"
 echo -e "${GREEN}done${NC}"
 
 # Sync package-lock.json
@@ -67,7 +76,7 @@ echo -e "${GREEN}done${NC}"
 
 # Update aur/PKGBUILD
 echo -n "Updating aur/PKGBUILD... "
-sed -i "s/^pkgver=.*/pkgver=$VERSION/" "$PROJECT_ROOT/aur/PKGBUILD"
+sed_inplace "s/^pkgver=.*/pkgver=$VERSION/" "$PROJECT_ROOT/aur/PKGBUILD"
 echo -e "${GREEN}done${NC}"
 
 echo ""
