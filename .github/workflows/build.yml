@@ -161,6 +161,16 @@ jobs:
         with:
           path: artifacts
 
+      - name: Fix filenames (replace spaces with periods)
+        run: |
+          # Find all files with spaces and rename them
+          find artifacts -type f -name "* *" | while read file; do
+            dir=$(dirname "$file")
+            oldname=$(basename "$file")
+            newname=$(echo "$oldname" | tr ' ' '.')
+            mv "$file" "$dir/$newname"
+          done
+
       - name: Get version from tag
         id: get_version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
