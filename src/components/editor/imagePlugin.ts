@@ -272,11 +272,11 @@ class ImageWidget extends WidgetType {
       img.src = this.src;
     } else {
       // Relative path - resolve against note's parent directory
-      const noteDir = this.notePath.substring(
-        0,
-        this.notePath.lastIndexOf('/')
-      );
-      const absolutePath = `${noteDir}/${this.src}`;
+      // Handle both Windows (\) and Unix (/) path separators
+      const lastSepIndex = Math.max(this.notePath.lastIndexOf('/'), this.notePath.lastIndexOf('\\'));
+      const noteDir = lastSepIndex > 0 ? this.notePath.substring(0, lastSepIndex) : '';
+      const sep = this.notePath.includes('\\') ? '\\' : '/';
+      const absolutePath = `${noteDir}${sep}${this.src}`;
       
       // Try asset protocol first, fallback to reading file as data URL
       const assetUrl = convertFileSrc(absolutePath);

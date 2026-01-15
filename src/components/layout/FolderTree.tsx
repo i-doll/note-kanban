@@ -46,8 +46,12 @@ function FolderNode({ folder, depth, notesDir }: FolderNodeProps) {
   // Get notes in this folder (not recursive), filtered by tag and search query
   const folderNotes = useMemo(() => {
     let filtered = notes.filter((note) => {
-      const noteDir = note.file_path.substring(0, note.file_path.lastIndexOf('/'));
-      const expectedDir = relativePath ? `${notesDir}/${relativePath}` : notesDir;
+      // Handle both Windows (\) and Unix (/) path separators
+      const lastSepIndex = Math.max(note.file_path.lastIndexOf('/'), note.file_path.lastIndexOf('\\'));
+      const noteDir = lastSepIndex > 0 ? note.file_path.substring(0, lastSepIndex) : '';
+      // Detect separator used in notesDir and use it for path construction
+      const sep = notesDir.includes('\\') ? '\\' : '/';
+      const expectedDir = relativePath ? `${notesDir}${sep}${relativePath.replace(/\//g, sep)}` : notesDir;
       return noteDir === expectedDir;
     });
 
@@ -78,8 +82,10 @@ function FolderNode({ folder, depth, notesDir }: FolderNodeProps) {
   // Get child folders
   const childFolders = useMemo(() => {
     return folders.filter((f) => {
-      const parts = f.relative_path.split('/');
-      const parentPath = parts.slice(0, -1).join('/');
+      // Handle both Windows (\) and Unix (/) path separators
+      const parts = f.relative_path.split(/[/\\]/);
+      const sep = f.relative_path.includes('\\') ? '\\' : '/';
+      const parentPath = parts.slice(0, -1).join(sep);
       return parentPath === relativePath;
     });
   }, [folders, relativePath]);
