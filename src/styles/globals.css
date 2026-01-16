@@ -113,6 +113,11 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+body.resizing {
+  user-select: none;
+  cursor: col-resize;
+}
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;

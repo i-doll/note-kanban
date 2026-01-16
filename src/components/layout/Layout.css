@@ -16,3 +16,12 @@
   overflow: auto;
   background-color: var(--bg-primary);
 }
+
+.sidebar-container {
+  overflow: hidden;
+  transition: width var(--transition-normal);
+}
+
+.sidebar-container.collapsed {
+  width: 0 !important;
+}

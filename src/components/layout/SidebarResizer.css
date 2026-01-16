@@ -1,0 +1,79 @@
+.sidebar-resizer {
+  position: relative;
+  width: 8px;
+  flex-shrink: 0;
+  cursor: col-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  transition: background-color var(--transition-fast);
+}
+
+.sidebar-resizer.collapsed {
+  cursor: default;
+}
+
+.sidebar-resizer:hover,
+.sidebar-resizer.dragging {
+  background-color: var(--ctp-surface0);
+}
+
+.sidebar-resizer-handle {
+  width: 2px;
+  height: 40px;
+  background-color: var(--border-color);
+  border-radius: 1px;
+  opacity: 0;
+  transition: opacity var(--transition-fast), background-color var(--transition-fast);
+}
+
+.sidebar-resizer:hover .sidebar-resizer-handle,
+.sidebar-resizer.dragging .sidebar-resizer-handle {
+  opacity: 1;
+}
+
+.sidebar-resizer:hover .sidebar-resizer-handle,
+.sidebar-resizer.dragging .sidebar-resizer-handle {
+  background-color: var(--accent);
+}
+
+.sidebar-resizer.collapsed .sidebar-resizer-handle {
+  display: none;
+}
+
+.sidebar-resizer-collapse-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity var(--transition-fast),
+              background-color var(--transition-fast),
+              color var(--transition-fast);
+  z-index: 10;
+}
+
+.sidebar-resizer:hover .sidebar-resizer-collapse-btn {
+  opacity: 1;
+}
+
+.sidebar-resizer-collapse-btn:hover {
+  background-color: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg-primary);
+}
+
+.sidebar-resizer:has(.sidebar-resizer-collapse-btn:hover) .sidebar-resizer-handle {
+  opacity: 0;
+}
